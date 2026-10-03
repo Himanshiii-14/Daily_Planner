@@ -6,7 +6,7 @@ export const metadata = {
   description: "A personal planner — plan, do, track, reflect, improve.",
 };
 
-const themeBoot = `try{if(localStorage.getItem("mlf-theme")==="dark")document.documentElement.classList.add("dark")}catch(e){}`;
+const themeBoot = `try{var t=localStorage.getItem("mlf-look");if(t==="galaxy"||t==="boba"||t==="retro")document.documentElement.setAttribute("data-look",t);else document.documentElement.setAttribute("data-look","retro")}catch(e){}`;
 
 export default function RootLayout({ children }) {
   return (

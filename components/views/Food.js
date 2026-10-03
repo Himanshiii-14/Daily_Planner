@@ -106,7 +106,7 @@ export default function Food({ boot, refresh, today }) {
             )}
             <button type="button" onClick={() => setDate(addDays(date, 1))} className="grid h-8 w-8 place-items-center rounded-full border border-border/70 bg-card text-muted-foreground hover:bg-muted">›</button>
           </div>
-          {saved && <span className="text-xs font-bold text-[#6E9668]">saved ♡</span>}
+          {saved && <span className="text-xs font-bold text-[var(--ink)]">saved ♡</span>}
         </div>
 
         <div className="grid gap-3 md:grid-cols-2">
@@ -197,7 +197,7 @@ export default function Food({ boot, refresh, today }) {
                   if (d.slice(0, 7) !== month) setMonth(d.slice(0, 7));
                 }}
                 className={`grid aspect-square place-items-center rounded-xl text-xs font-bold transition-all hover:scale-105 ${
-                  sel ? "bg-primary text-white shadow-sm" : logged ? "bg-[#A8C8A0]/25 text-foreground" : "bg-muted/60 text-muted-foreground"
+                  sel ? "bg-primary text-white shadow-sm" : logged ? "bg-[color-mix(in_srgb,var(--pop2)_55%,transparent)] text-foreground" : "bg-muted/60 text-muted-foreground"
                 }`}
               >
                 <span>{new Date(`${d}T00:00:00`).getDate()}</span>

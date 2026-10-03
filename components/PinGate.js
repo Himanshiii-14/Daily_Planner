@@ -1,8 +1,10 @@
 "use client";
 
 import { useState } from "react";
+import { ThemeSwitcher, useTheme } from "@/components/theme";
 
 export default function PinGate({ onUnlock, name = "Himanshi" }) {
+  const { current } = useTheme();
   const [pin, setPin] = useState("");
   const [err, setErr] = useState("");
   const [busy, setBusy] = useState(false);
@@ -35,16 +37,22 @@ export default function PinGate({ onUnlock, name = "Himanshi" }) {
   return (
     <div className="relative grid min-h-screen place-items-center overflow-hidden bg-background px-4">
       <div className="pointer-events-none absolute inset-0 select-none">
-        <span className="floaty absolute left-[12%] top-[16%] text-3xl opacity-30">🌸</span>
-        <span className="floaty absolute right-[14%] top-[24%] text-2xl opacity-30" style={{ animationDelay: "1s" }}>☁️</span>
-        <span className="floaty absolute bottom-[18%] left-[18%] text-2xl opacity-30" style={{ animationDelay: "2s" }}>🌿</span>
-        <span className="floaty absolute bottom-[26%] right-[16%] text-3xl opacity-30" style={{ animationDelay: "0.5s" }}>🎀</span>
+        {current.stickers.slice(0, 4).map((emoji, i) => (
+          <span
+            key={emoji + i}
+            className={`floaty absolute text-3xl opacity-50 ${["left-[12%] top-[16%] rotate-12", "right-[14%] top-[24%] -rotate-6", "bottom-[18%] left-[18%] rotate-3", "bottom-[26%] right-[16%] -rotate-12"][i]}`}
+            style={{ animationDelay: `${i * 0.5}s` }}
+          >
+            {emoji}
+          </span>
+        ))}
       </div>
       <form
         onSubmit={submit}
-        className="anim-fade-up w-full max-w-sm rounded-[2rem] border border-border/70 bg-card p-8 text-center shadow-soft"
+        className="sticker anim-fade-up w-full max-w-sm rotate-[-0.6deg] bg-card p-8 text-center"
       >
-        <div className="breathe mx-auto mb-3 text-5xl">🌷</div>
+        <div className="mb-3 flex justify-center"><ThemeSwitcher compact /></div>
+        <div className="breathe mx-auto mb-3 text-5xl">{current.emoji}</div>
         <h1 className="font-display text-2xl font-bold">My Little Life</h1>
         <p className="mt-1 text-sm text-muted-foreground">{name}&apos;s little corner of calm ♡</p>
         <input
@@ -61,7 +69,7 @@ export default function PinGate({ onUnlock, name = "Himanshi" }) {
         <button
           type="submit"
           disabled={busy || pin.length < 4}
-          className="mt-5 w-full rounded-full bg-primary py-3 font-bold text-primary-foreground shadow-sm shadow-primary/30 transition-all hover:opacity-90 active:scale-95 disabled:opacity-40"
+          className="mt-5 w-full rounded-2xl border-[2.5px] border-[var(--ink)] bg-[var(--pop)] py-3 font-bold text-[var(--ink)] shadow-[3px_3px_0_var(--ink)] transition-all hover:-translate-y-0.5 active:translate-y-0.5 active:shadow-none disabled:opacity-40"
         >
           {busy ? "Opening…" : "Unlock ♡"}
         </button>

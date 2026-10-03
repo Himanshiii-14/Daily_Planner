@@ -1,44 +1,35 @@
 "use client";
 
-export function CuteCheck({ done, onClick, size = 26, color = "#A8C8A0" }) {
+import { useTheme } from "@/components/theme";
+
+export function CuteCheck({ done, onClick, size = 26, color = "var(--pop2)" }) {
+  const { current } = useTheme();
   return (
     <button
       type="button"
       onClick={onClick}
       aria-pressed={done}
-      className={`relative grid shrink-0 place-items-center rounded-full border-2 transition-all duration-300 active:scale-90 ${
-        done
-          ? "border-transparent shadow-sm"
-          : "border-[#E5CBD8] bg-white hover:scale-110 hover:border-[#E8A0B4] dark:border-[#4A4262] dark:bg-[#373148]"
+      className={`relative grid shrink-0 place-items-center rounded-[10px] border-[2.5px] border-[var(--ink)] transition-all duration-300 active:scale-90 ${
+        done ? "shadow-[2px_2px_0_var(--ink)]" : "bg-[var(--paper)] hover:scale-110 hover:bg-[var(--pop2)]"
       }`}
       style={{ width: size, height: size, background: done ? color : undefined }}
     >
       {done && (
-        <svg
-          key={String(done)}
-          className="anim-pop"
-          width={size * 0.6}
-          height={size * 0.6}
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="white"
-          strokeWidth="3.5"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-        >
-          <path d="M20 6L9 17l-5-5" />
-        </svg>
+        <span key={String(done)} className="anim-pop leading-none" style={{ fontSize: size * 0.62 }}>
+          {current.check}
+        </span>
       )}
     </button>
   );
 }
 
 export function Burst({ id }) {
+  const { current } = useTheme();
   if (!id) return null;
-  const petals = ["🌸", "⭐", "♡", "✿", "✨"];
   return (
     <span key={id} className="pointer-events-none absolute inset-0 z-10 flex items-center justify-center">
-      {petals.map((p, i) => (
+      <span className="cheer">{current.cheer}</span>
+      {current.petals.map((p, i) => (
         <span
           key={i}
           className="petal text-[11px]"
@@ -55,8 +46,8 @@ export function SectionCard({ emoji, title, right, children, className = "", onC
   return (
     <div
       onClick={onClick}
-      className={`rounded-[1.4rem] border border-border/70 bg-card p-5 shadow-card ${
-        onClick ? "cursor-pointer transition-all hover:-translate-y-0.5 hover:shadow-soft" : ""
+      className={`sticker wobble relative bg-card p-5 ${title && title.length % 2 === 0 ? "rotate-[0.5deg]" : "-rotate-[0.45deg]"} ${
+        onClick ? "cursor-pointer transition-all hover:rotate-0 hover:-translate-y-0.5" : ""
       } ${className}`}
     >
       {(title || right) && (
@@ -73,21 +64,18 @@ export function SectionCard({ emoji, title, right, children, className = "", onC
   );
 }
 
-export function Bar({ value, max = 100, h = "h-3", from = "#F2B5C6", to = "#C9B6E4" }) {
+export function Bar({ value, max = 100, h = "h-3" }) {
   const pct = max ? Math.min(100, Math.round((value / max) * 100)) : 0;
   return (
-    <div className={`${h} w-full overflow-hidden rounded-full bg-muted`}>
-      <div
-        className="h-full rounded-full transition-all duration-500"
-        style={{ width: `${pct}%`, background: `linear-gradient(90deg, ${from}, ${to})` }}
-      />
+    <div className={`goal-track ${h} w-full overflow-hidden rounded-full border-2 border-[var(--ink)] bg-[var(--paper)]`}>
+      <div className="goal-fill h-full rounded-full transition-all duration-500" style={{ width: `${pct}%` }} />
     </div>
   );
 }
 
 export function StatChip({ emoji, label, value }) {
   return (
-    <div className="flex items-center gap-2 rounded-full border border-border/60 bg-card px-3.5 py-1.5 text-sm shadow-sm">
+    <div className="flex items-center gap-2 rounded-full border-[2.5px] border-[var(--ink)] bg-[var(--pop2)] px-3.5 py-1.5 text-sm text-[var(--ink)] shadow-[2px_2px_0_var(--dust)] dark:border-[var(--ink)] dark:text-[var(--ink)]">
       <span>{emoji}</span>
       <span className="text-muted-foreground">{label}</span>
       <span className="font-bold text-foreground">{value}</span>
@@ -97,7 +85,7 @@ export function StatChip({ emoji, label, value }) {
 
 export function Empty({ emoji = "🌸", text, children }) {
   return (
-    <div className="grid place-items-center gap-2 rounded-2xl border-2 border-dashed border-border/80 px-4 py-8 text-center">
+    <div className="grid -rotate-1 place-items-center gap-2 rounded-[22px] border-[2.5px] border-dashed border-[var(--dust)] bg-[var(--paper)] px-4 py-8 text-center dark:bg-[var(--paper)]">
       <span className="floaty text-3xl">{emoji}</span>
       <p className="text-sm text-muted-foreground">{text}</p>
       {children}
@@ -107,17 +95,17 @@ export function Empty({ emoji = "🌸", text, children }) {
 
 export function Btn({ children, onClick, tone = "pink", className = "", disabled, type = "button" }) {
   const tones = {
-    pink: "bg-primary text-primary-foreground hover:opacity-90 shadow-sm shadow-primary/30",
-    soft: "bg-primary/10 text-primary hover:bg-primary/20",
-    ghost: "text-muted-foreground hover:bg-muted",
-    sage: "bg-[#9DBB96] text-white hover:opacity-90",
+    pink: "bg-[var(--pop)] text-[var(--ink)] shadow-[3px_3px_0_var(--ink)] hover:-translate-y-0.5",
+    soft: "bg-[var(--pop2)] text-[var(--ink)] shadow-[3px_3px_0_var(--dust)] hover:-translate-y-0.5",
+    ghost: "bg-transparent text-[var(--dust)] shadow-none hover:bg-[color-mix(in_srgb,var(--pop2)_60%,transparent)]",
+    sage: "bg-[var(--dust)] text-[var(--paper)] shadow-[3px_3px_0_var(--ink)] hover:-translate-y-0.5",
   };
   return (
     <button
       type={type}
       disabled={disabled}
       onClick={onClick}
-      className={`inline-flex items-center justify-center gap-1.5 rounded-full px-4 py-2 text-sm font-bold transition-all active:scale-95 disabled:opacity-40 ${tones[tone]} ${className}`}
+      className={`inline-flex items-center justify-center gap-1.5 rounded-2xl border-[2.5px] border-[var(--ink)] px-4 py-2 text-sm font-bold transition-all active:translate-x-[2px] active:translate-y-[2px] active:shadow-none disabled:opacity-40 dark:border-[var(--ink)] ${tones[tone]} ${className}`}
     >
       {children}
     </button>
@@ -144,7 +132,7 @@ export function MonthNav({ label, onPrev, onNext }) {
       <button
         type="button"
         onClick={onPrev}
-        className="grid h-8 w-8 place-items-center rounded-full border border-border/70 bg-card text-muted-foreground transition hover:bg-muted"
+        className="grid h-8 w-8 place-items-center rounded-xl border-[2.5px] border-[var(--ink)] bg-[var(--pop2)] font-display text-lg text-[var(--ink)] shadow-[2px_2px_0_var(--dust)] transition hover:-translate-y-0.5"
       >
         ‹
       </button>
@@ -152,7 +140,7 @@ export function MonthNav({ label, onPrev, onNext }) {
       <button
         type="button"
         onClick={onNext}
-        className="grid h-8 w-8 place-items-center rounded-full border border-border/70 bg-card text-muted-foreground transition hover:bg-muted"
+        className="grid h-8 w-8 place-items-center rounded-xl border-[2.5px] border-[var(--ink)] bg-[var(--pop2)] font-display text-lg text-[var(--ink)] shadow-[2px_2px_0_var(--dust)] transition hover:-translate-y-0.5"
       >
         ›
       </button>
@@ -181,9 +169,9 @@ export function Heatmap({ dates, doneSet, today, onToggle }) {
           const isToday = d === today;
           const future = d > today;
           let cls = "cursor-default bg-muted/50 text-muted-foreground/40";
-          if (done) cls = "bg-[#A8C8A0] text-white shadow-sm hover:opacity-80";
-          else if (isToday) cls = "bg-primary/15 text-primary ring-2 ring-primary/40 hover:scale-105";
-          else if (!future) cls = "bg-rose-100/80 text-rose-400 hover:scale-105 dark:bg-[#3A2F3F] dark:text-rose-300/60";
+          if (done) cls = "border-[2px] border-[var(--ink)] bg-[var(--pop2)] text-[var(--ink)] shadow-[2px_2px_0_var(--dust)] hover:opacity-80";
+          else if (isToday) cls = "border-[2px] border-[var(--ink)] bg-[var(--pop)] text-[var(--ink)] hover:scale-105";
+          else if (!future) cls = "border-[2px] border-[color-mix(in_srgb,var(--dust)_40%,transparent)] bg-[color-mix(in_srgb,var(--pop)_40%,transparent)] text-[var(--dust)] hover:scale-105";
           return (
             <button
               key={d}
@@ -199,8 +187,8 @@ export function Heatmap({ dates, doneSet, today, onToggle }) {
         })}
       </div>
       <div className="mt-3 flex flex-wrap items-center gap-3 text-[11px] text-muted-foreground">
-        <span className="flex items-center gap-1"><i className="inline-block h-2.5 w-2.5 rounded-full bg-[#A8C8A0]" /> completed</span>
-        <span className="flex items-center gap-1"><i className="inline-block h-2.5 w-2.5 rounded-full bg-rose-200 dark:bg-[#4A3542]" /> missed</span>
+        <span className="flex items-center gap-1"><i className="inline-block h-2.5 w-2.5 rounded-full border border-[var(--ink)] bg-[var(--pop2)]" /> completed</span>
+        <span className="flex items-center gap-1"><i className="inline-block h-2.5 w-2.5 rounded-full bg-[var(--pop)]" /> missed</span>
         <span className="flex items-center gap-1"><i className="inline-block h-2.5 w-2.5 rounded-full bg-primary/40" /> today</span>
         <span className="flex items-center gap-1"><i className="inline-block h-2.5 w-2.5 rounded-full bg-muted" /> future</span>
       </div>
@@ -209,14 +197,27 @@ export function Heatmap({ dates, doneSet, today, onToggle }) {
 }
 
 export function Dots({ count, target }) {
+  const { theme } = useTheme();
   return (
     <div className="flex items-center gap-1.5">
-      {Array.from({ length: target }).map((_, i) => (
-        <span
-          key={i}
-          className={`h-3 w-3 rounded-full transition-all ${i < count ? "bg-[#A8C8A0]" : "bg-muted ring-1 ring-border"}`}
-        />
-      ))}
+      {Array.from({ length: target }).map((_, i) => {
+        const on = i < count;
+        if (theme === "galaxy") {
+          return <span key={i} className={`text-sm leading-none ${on ? "" : "opacity-30"}`}>{on ? "⭐" : "·"}</span>;
+        }
+        return (
+          <span
+            key={i}
+            className={`h-3.5 w-3.5 rounded-full border-2 border-[var(--ink)] transition-all ${
+              on
+                ? theme === "boba"
+                  ? "bg-[radial-gradient(circle_at_35%_35%,#fff_0_2px,var(--ink)_3px,var(--pop)_6px)]"
+                  : "bg-[var(--pop2)]"
+                : "bg-[var(--paper)]"
+            }`}
+          />
+        );
+      })}
     </div>
   );
 }

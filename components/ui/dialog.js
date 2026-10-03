@@ -15,7 +15,7 @@ export function DialogContent({ className = "", children }) {
     <DialogPrimitive.Portal>
       <DialogPrimitive.Overlay className="fixed inset-0 z-50 bg-black/30 backdrop-blur-sm" />
       <DialogPrimitive.Content
-        className={`fixed left-1/2 top-1/2 z-50 w-[calc(100%-1.5rem)] -translate-x-1/2 -translate-y-1/2 border border-border/70 p-5 shadow-soft outline-none ${className}`}
+        className={`sticker fixed left-1/2 top-1/2 z-50 w-[calc(100%-1.5rem)] -translate-x-1/2 -translate-y-1/2 rotate-[-0.4deg] bg-card p-5 outline-none ${className}`}
       >
         {children}
         <DialogPrimitive.Close className="absolute right-4 top-4 grid h-8 w-8 place-items-center rounded-full text-muted-foreground hover:bg-muted">

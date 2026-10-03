@@ -2,8 +2,9 @@
 
 import { useState } from "react";
 import { SectionCard, Btn, PageHead } from "@/components/ui-bits";
+import { ThemeSwitcher } from "@/components/theme";
 
-export default function SettingsView({ boot, refresh, dark, setDark }) {
+export default function SettingsView({ boot, refresh }) {
   const [name, setName] = useState(boot.name || "");
   const [msg, setMsg] = useState("");
   const [cur, setCur] = useState("");
@@ -75,22 +76,12 @@ export default function SettingsView({ boot, refresh, dark, setDark }) {
             <input className={input} value={name} onChange={(e) => setName(e.target.value)} placeholder="Himanshi" />
           </div>
           <Btn onClick={saveName}>Save</Btn>
-          {msg && <span className="pb-2 text-xs font-bold text-[#6E9668]">{msg}</span>}
+          {msg && <span className="pb-2 text-xs font-bold text-[var(--ink)]">{msg}</span>}
         </div>
       </SectionCard>
 
-      <SectionCard emoji="🌙" title="Appearance">
-        <button
-          type="button"
-          onClick={() => setDark(!dark)}
-          className={`flex items-center gap-3 rounded-2xl border p-4 text-left transition-all ${dark ? "border-primary/50 bg-primary/10" : "border-border/70"}`}
-        >
-          <span className="text-2xl">{dark ? "🌙" : "☀️"}</span>
-          <span>
-            <span className="block text-sm font-bold">{dark ? "Cozy night mode" : "Soft daylight mode"}</span>
-            <span className="block text-xs text-muted-foreground">tap to switch</span>
-          </span>
-        </button>
+      <SectionCard emoji="🎨" title="Theme">
+        <ThemeSwitcher />
       </SectionCard>
 
       <SectionCard emoji="🔒" title="Privacy PIN">
@@ -106,7 +97,7 @@ export default function SettingsView({ boot, refresh, dark, setDark }) {
         </div>
         <div className="mt-3 flex items-center gap-3">
           <Btn onClick={changePin} disabled={cur.length !== 4 || np.length !== 4}>Change PIN</Btn>
-          {pinMsg && <span className={`text-xs font-bold ${pinBad ? "text-destructive" : "text-[#6E9668]"}`}>{pinMsg}</span>}
+          {pinMsg && <span className={`text-xs font-bold ${pinBad ? "text-destructive" : "text-[var(--ink)]"}`}>{pinMsg}</span>}
         </div>
       </SectionCard>
 

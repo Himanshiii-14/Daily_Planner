@@ -18,12 +18,12 @@ module.exports = {
     },
     extend: {
       fontFamily: {
-        sans: ["Quicksand", "ui-sans-serif", "system-ui", "-apple-system", "sans-serif"],
-        display: ["Fraunces", "Georgia", "serif"],
+        sans: ["Nunito", "ui-sans-serif", "system-ui", "-apple-system", "sans-serif"],
+        display: ["Fredoka", "Nunito", "ui-sans-serif", "sans-serif"],
       },
       boxShadow: {
-        soft: "0 14px 40px -14px rgba(214, 141, 165, 0.28)",
-        card: "0 6px 24px -10px rgba(120, 100, 140, 0.14)",
+        soft: "5px 5px 0 var(--dust)",
+        card: "4px 4px 0 var(--dust)",
       },
       colors: {
         border: "hsl(var(--border))",

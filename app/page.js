@@ -15,6 +15,7 @@ import Notes from "@/components/views/Notes";
 import CalendarView from "@/components/views/CalendarView";
 import SettingsView from "@/components/views/SettingsView";
 import { localToday, api } from "@/lib/shared";
+import { ThemeSwitcher, useTheme } from "@/components/theme";
 
 const NAV = [
   { id: "home", emoji: "🌷", label: "Home" },
@@ -33,18 +34,27 @@ const NAV = [
 const MOBILE_MAIN = ["home", "today", "habits"];
 
 function Decor() {
+  const { current } = useTheme();
+  const spots = [
+    "left-[6%] top-[12%] rotate-12 text-4xl",
+    "right-[8%] top-[20%] -rotate-6 text-3xl",
+    "bottom-[14%] left-[10%] rotate-3 text-3xl",
+    "bottom-[22%] right-[12%] -rotate-12 text-4xl",
+    "left-[45%] top-[6%] rotate-6 text-2xl",
+  ];
   return (
     <div className="pointer-events-none fixed inset-0 z-0 select-none overflow-hidden">
-      <span className="floaty absolute left-[6%] top-[12%] text-4xl opacity-20">🌸</span>
-      <span className="floaty absolute right-[8%] top-[20%] text-3xl opacity-20" style={{ animationDelay: "1.2s" }}>☁️</span>
-      <span className="floaty absolute bottom-[14%] left-[10%] text-3xl opacity-20" style={{ animationDelay: "2.1s" }}>🌿</span>
-      <span className="floaty absolute bottom-[22%] right-[12%] text-4xl opacity-20" style={{ animationDelay: "0.6s" }}>🎀</span>
-      <span className="floaty absolute left-[45%] top-[6%] text-2xl opacity-15" style={{ animationDelay: "1.8s" }}>⭐</span>
+      {current.stickers.map((emoji, i) => (
+        <span key={emoji + i} className={`floaty absolute opacity-40 ${spots[i]}`} style={{ animationDelay: `${i * 0.4}s` }}>
+          {emoji}
+        </span>
+      ))}
     </div>
   );
 }
 
 export default function App() {
+  const { current } = useTheme();
   const [boot, setBoot] = useState(null);
   const [locked, setLocked] = useState(false);
   const [error, setError] = useState("");
@@ -52,8 +62,6 @@ export default function App() {
   const [addOpen, setAddOpen] = useState(false);
   const [addPreset, setAddPreset] = useState(null);
   const [moreOpen, setMoreOpen] = useState(false);
-  const [dark, setDark] = useState(false);
-  const [themeReady, setThemeReady] = useState(false);
   const [q, setQ] = useState("");
   const [results, setResults] = useState(null);
   const today = localToday();
@@ -77,17 +85,6 @@ export default function App() {
   useEffect(() => {
     load();
   }, [load]);
-
-  useEffect(() => {
-    setDark(localStorage.getItem("mlf-theme") === "dark");
-    setThemeReady(true);
-  }, []);
-
-  useEffect(() => {
-    if (!themeReady) return;
-    document.documentElement.classList.toggle("dark", dark);
-    localStorage.setItem("mlf-theme", dark ? "dark" : "light");
-  }, [dark, themeReady]);
 
   useEffect(() => {
     if (!q.trim()) {
@@ -151,16 +148,16 @@ export default function App() {
     money: <MoneyView {...props} />,
     notes: <Notes {...props} />,
     calendar: <CalendarView {...props} />,
-    settings: <SettingsView {...props} dark={dark} setDark={setDark} />,
+    settings: <SettingsView {...props} />,
   };
 
   return (
     <div className="min-h-screen bg-background text-foreground">
       <Decor />
 
-      <aside className="fixed inset-y-0 left-0 z-30 hidden w-60 flex-col border-r border-border/60 bg-sidebar/95 backdrop-blur md:flex">
+      <aside className="fixed inset-y-0 left-0 z-30 hidden w-60 -rotate-[0.3deg] flex-col border-r-[3px] border-[var(--ink)] bg-[var(--pop2)] shadow-[6px_0_0_var(--pop)] md:flex dark:border-[var(--ink)] dark:bg-[#2A3548] dark:shadow-[6px_0_0_var(--dust)]">
         <div className="px-6 pb-4 pt-7">
-          <div className="font-display text-2xl font-bold">🌷 My Little Life</div>
+          <div className="font-display text-2xl font-bold">{current.emoji} My Little Life</div>
           <div className="mt-0.5 text-[11px] font-semibold tracking-wide text-muted-foreground">plan · do · track · reflect · improve</div>
         </div>
         <nav className="flex-1 space-y-1 overflow-y-auto px-3 py-2">
@@ -169,29 +166,27 @@ export default function App() {
               key={n.id}
               type="button"
               onClick={() => go(n.id)}
-              className={`flex w-full items-center gap-3 rounded-xl px-3.5 py-2.5 text-sm font-bold transition-all ${
-                view === n.id ? "bg-primary/15 text-primary shadow-sm" : "text-foreground/65 hover:bg-primary/10 hover:text-foreground"
+              className={`flex w-full items-center gap-3 rounded-2xl border-2 px-3.5 py-2.5 text-sm font-bold transition-all ${
+                view === n.id
+                  ? "rotate-[-1deg] border-[var(--ink)] bg-[var(--pop)] text-[var(--ink)] shadow-[3px_3px_0_var(--ink)]"
+                  : "border-transparent text-[var(--ink)] hover:border-[var(--ink)] hover:bg-[var(--paper)] dark:text-[var(--paper)]"
               }`}
             >
               <span className="text-base">{n.emoji}</span> {n.label}
             </button>
           ))}
         </nav>
-        <div className="flex items-center justify-between border-t border-border/50 px-5 py-4">
-          <span className="text-sm font-semibold text-muted-foreground">♡ {boot.name}</span>
-          <button type="button" onClick={() => setDark(!dark)} className="grid h-9 w-9 place-items-center rounded-full border border-border/70 bg-card text-sm transition hover:bg-muted" title="toggle theme">
-            {dark ? "☀️" : "🌙"}
-          </button>
+        <div className="border-t border-border/50 px-4 py-3">
+          <div className="mb-2 text-sm font-semibold text-muted-foreground">♡ {boot.name}</div>
+          <ThemeSwitcher compact />
         </div>
       </aside>
 
       <main className="relative z-10 px-4 pb-32 pt-5 md:pb-10 md:pl-64 md:pr-8">
         <div className="mx-auto max-w-5xl">
           <div className="mb-4 flex items-center justify-between md:hidden">
-            <span className="font-display text-xl font-bold">🌷 My Little Life</span>
-            <button type="button" onClick={() => setDark(!dark)} className="grid h-9 w-9 place-items-center rounded-full border border-border/70 bg-card text-sm">
-              {dark ? "☀️" : "🌙"}
-            </button>
+            <span className="font-display text-xl font-bold">{current.emoji} My Little Life</span>
+            <ThemeSwitcher compact />
           </div>
 
           <div className="relative z-20 mb-5">
@@ -199,7 +194,7 @@ export default function App() {
               value={q}
               onChange={(e) => setQ(e.target.value)}
               placeholder="🔍 search tasks, goals, notes…"
-              className="w-full rounded-full border border-border/70 bg-card px-5 py-2.5 text-sm shadow-card outline-none ring-ring focus:ring-2"
+              className="w-full rounded-2xl border-[2.5px] border-[var(--ink)] bg-card px-5 py-2.5 text-sm shadow-[3px_3px_0_var(--pop2)] outline-none ring-ring focus:ring-2"
             />
             {results && (
               <div className="absolute inset-x-0 top-12 max-h-80 overflow-y-auto rounded-2xl border border-border/70 bg-card p-2 shadow-soft">
@@ -223,7 +218,7 @@ export default function App() {
         type="button"
         onClick={() => onAdd(null)}
         title="add something lovely"
-        className="fixed bottom-8 right-8 z-40 hidden h-14 w-14 place-items-center rounded-full bg-primary text-2xl text-primary-foreground shadow-lg shadow-primary/40 transition-transform hover:scale-110 active:scale-95 md:grid"
+        className="fixed bottom-8 right-8 z-40 hidden h-14 w-14 rotate-3 place-items-center rounded-2xl border-[2.5px] border-[var(--ink)] bg-[var(--pop)] text-3xl text-[var(--ink)] shadow-[4px_4px_0_var(--ink)] transition-transform hover:rotate-0 hover:scale-110 active:translate-x-1 active:translate-y-1 active:shadow-none md:grid"
       >
         ＋
       </button>
@@ -238,7 +233,7 @@ export default function App() {
             </button>
           );
         })}
-        <button type="button" onClick={() => onAdd(null)} className="grid h-12 w-12 place-items-center rounded-full bg-primary text-xl text-primary-foreground shadow-md shadow-primary/40 active:scale-95">
+        <button type="button" onClick={() => onAdd(null)} className="grid h-12 w-12 rotate-3 place-items-center rounded-2xl border-[2.5px] border-[var(--ink)] bg-[var(--pop)] text-xl text-[var(--ink)] shadow-[3px_3px_0_var(--ink)] active:translate-y-0.5 active:shadow-none">
           ＋
         </button>
         <button type="button" onClick={() => setMoreOpen(true)} className="flex flex-col items-center gap-0.5 rounded-xl px-3 py-1 text-[10px] font-bold text-muted-foreground">

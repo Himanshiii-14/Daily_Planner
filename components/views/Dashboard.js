@@ -3,8 +3,10 @@
 import { useState } from "react";
 import { SectionCard, Bar, CuteCheck, Burst, StatChip } from "@/components/ui-bits";
 import { greeting, fmtDay, pickQuote, post, patch } from "@/lib/shared";
+import { useTheme } from "@/components/theme";
 
 export default function Dashboard({ boot, go, refresh, today, onAdd }) {
+  const { theme, current } = useTheme();
   const s = boot.stats || {};
   const totalDone = (s.taskDone || 0) + (s.habitDone || 0);
   const totalAll = (s.taskTotal || 0) + (s.habitTotal || 0);
@@ -36,9 +38,9 @@ export default function Dashboard({ boot, go, refresh, today, onAdd }) {
 
   return (
     <div className="anim-fade-up space-y-5">
-      <div className="relative overflow-hidden rounded-[2rem] border border-border/60 bg-gradient-to-br from-[#FDEFF3] via-[#F7F0FA] to-[#EDF5EA] p-7 shadow-card dark:from-[#332B44] dark:via-[#2C2739] dark:to-[#2A3329]">
-        <span className="pointer-events-none absolute -right-2 -top-3 select-none text-7xl opacity-25">🌸</span>
-        <span className="pointer-events-none absolute bottom-2 right-16 select-none text-4xl opacity-20">☁️</span>
+      <div className="theme-hero sticker relative overflow-hidden p-7">
+        <span className="pointer-events-none absolute -right-1 -top-2 rotate-12 select-none text-6xl opacity-80">{current.emoji}</span>
+        <span className="pointer-events-none absolute bottom-2 right-16 -rotate-6 select-none text-4xl opacity-70">{current.stickers[0]}</span>
         <p className="text-sm font-semibold text-foreground/60">🌸 {fmtDay(today)}</p>
         <h1 className="mt-1 font-display text-3xl font-bold text-foreground md:text-4xl">
           {greeting()}, {boot.name} ♡
@@ -52,7 +54,17 @@ export default function Dashboard({ boot, go, refresh, today, onAdd }) {
           <span>
             <b className="text-foreground">{s.taskDone || 0} / {s.taskTotal || 0}</b> tasks · <b className="text-foreground">{s.habitDone || 0} / {s.habitTotal || 0}</b> habits
           </span>
-          <span>{pct >= 80 ? "✨ you did amazing" : pct >= 40 ? "🌿 lovely progress" : "🌱 every little step counts"}</span>
+          <span>
+            {theme === "galaxy"
+              ? `cosmic streak · ${totalDone} stars today`
+              : theme === "boba"
+                ? `your cup is ${pct}% full 🧋`
+                : pct >= 80
+                  ? "you did a thing! 😁"
+                  : pct >= 40
+                    ? "stickers are adding up ⭐"
+                    : "one smiley at a time 💛"}
+          </span>
         </div>
         <div className="mt-4 flex flex-wrap gap-2">
           <StatChip emoji="🌸" label="weekly goals" value={`${s.weeklyHit || 0} / ${s.weeklyTotal || 0}`} />
@@ -89,10 +101,10 @@ export default function Dashboard({ boot, go, refresh, today, onAdd }) {
                   type="button"
                   onClick={() => toggleHabit(h)}
                   className={`flex items-center gap-2 rounded-full border px-4 py-2 text-sm font-semibold transition-all active:scale-95 ${
-                    h.done ? "border-transparent bg-[#A8C8A0] text-white shadow-sm" : "border-border/70 bg-background text-foreground/75 hover:border-primary/50"
+                    h.done ? "border-transparent bg-[var(--pop2)] text-[var(--ink)] shadow-sm" : "border-border/70 bg-background text-foreground/75 hover:border-primary/50"
                   }`}
                 >
-                  <span>{h.emoji}</span> {h.name} {h.done ? "✓" : "○"}
+                  <span>{h.emoji}</span> {h.name} {h.done ? current.check : theme === "galaxy" ? "🌙" : "○"}
                 </button>
               ))}
             </div>
@@ -106,16 +118,16 @@ export default function Dashboard({ boot, go, refresh, today, onAdd }) {
             {(boot.weeklyGoals || []).map((g) => {
               const hit = g.count >= (g.target || 1);
               return (
-                <div key={g.id} className={`rounded-2xl border p-3 ${hit ? "border-[#A8C8A0]/60 bg-[#A8C8A0]/10" : "border-border/70"}`}>
+                <div key={g.id} className={`rounded-2xl border p-3 ${hit ? "border-[var(--ink)] bg-[color-mix(in_srgb,var(--pop2)_55%,transparent)]" : "border-border/70"}`}>
                   <div className="flex items-center justify-between gap-2">
                     <span className="truncate text-sm font-semibold">{g.emoji} {g.name}</span>
-                    <span className={`shrink-0 text-xs font-bold ${hit ? "text-[#6E9668]" : "text-muted-foreground"}`}>
+                    <span className={`shrink-0 text-xs font-bold ${hit ? "text-[var(--ink)]" : "text-muted-foreground"}`}>
                       {g.count} / {g.target} {hit ? "✓" : ""}
                     </span>
                   </div>
                   <div className="mt-2 flex gap-1.5">
                     {Array.from({ length: g.target || 1 }).map((_, i) => (
-                      <span key={i} className={`h-2.5 w-2.5 rounded-full ${i < g.count ? "bg-[#A8C8A0]" : "bg-muted ring-1 ring-border"}`} />
+                      <span key={i} className={`h-2.5 w-2.5 rounded-full ${i < g.count ? "bg-[var(--pop2)]" : "bg-muted ring-1 ring-border"}`} />
                     ))}
                   </div>
                 </div>

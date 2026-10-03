@@ -63,16 +63,16 @@ export default function Weekly({ boot, refresh, today, onAdd }) {
               const hit = c >= (g.target || 1);
               const markedToday = (todayCount[g.id] || 0) > 0;
               return (
-                <div key={g.id} className={`group flex flex-wrap items-center gap-3 rounded-2xl border p-3 ${hit ? "border-[#A8C8A0]/60 bg-[#A8C8A0]/10" : "border-border/70"}`}>
+                <div key={g.id} className={`group flex flex-wrap items-center gap-3 rounded-2xl border p-3 ${hit ? "border-[var(--ink)] bg-[color-mix(in_srgb,var(--pop2)_55%,transparent)]" : "border-border/70"}`}>
                   <span className="min-w-0 flex-1 truncate text-sm font-semibold">{g.emoji} {g.name}</span>
                   <Dots count={c} target={g.target || 1} />
-                  <span className={`text-xs font-bold ${hit ? "text-[#6E9668]" : "text-muted-foreground"}`}>
+                  <span className={`text-xs font-bold ${hit ? "text-[var(--ink)]" : "text-muted-foreground"}`}>
                     {c} / {g.target} {hit ? "✓" : ""}
                   </span>
                   <button
                     type="button"
                     onClick={() => toggleToday(g)}
-                    className={`rounded-full px-3 py-1 text-[11px] font-bold transition-all active:scale-95 ${markedToday ? "bg-[#A8C8A0] text-white" : "bg-primary/10 text-primary hover:bg-primary/20"}`}
+                    className={`rounded-full px-3 py-1 text-[11px] font-bold transition-all active:scale-95 ${markedToday ? "bg-[var(--pop2)] text-[var(--ink)]" : "bg-primary/10 text-primary hover:bg-primary/20"}`}
                   >
                     {markedToday ? "✓ today" : "+ today"}
                   </button>
@@ -116,7 +116,7 @@ export default function Weekly({ boot, refresh, today, onAdd }) {
                       const hit = c >= (g.target || 1);
                       const weekOver = w.end < today;
                       const cls = hit
-                        ? "bg-[#A8C8A0] text-white"
+                        ? "bg-[var(--pop2)] text-[var(--ink)]"
                         : weekOver
                           ? "bg-rose-100 text-rose-400 dark:bg-[#3A2F3F] dark:text-rose-300/70"
                           : "bg-muted text-muted-foreground";

@@ -65,7 +65,7 @@ export default function Notes({ boot, refresh, today }) {
             )}
             <button type="button" onClick={() => setDate(addDays(date, 1))} className="grid h-8 w-8 place-items-center rounded-full border border-border/70 bg-card text-muted-foreground hover:bg-muted">›</button>
           </div>
-          {saved && <span className="text-xs font-bold text-[#6E9668]">saved ♡</span>}
+          {saved && <span className="text-xs font-bold text-[var(--ink)]">saved ♡</span>}
         </div>
         <textarea
           rows={7}

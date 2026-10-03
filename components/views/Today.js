@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { SectionCard, Bar, CuteCheck, Burst, Btn } from "@/components/ui-bits";
 import { CATEGORIES, PRIORITIES, fmtDay, post, patch, del } from "@/lib/shared";
+import { useTheme } from "@/components/theme";
 
 function TaskRow({ t, onToggle, onDelete }) {
   const [n, setN] = useState(0);
@@ -40,6 +41,7 @@ function TaskRow({ t, onToggle, onDelete }) {
 }
 
 export default function Today({ boot, refresh, today, onAdd }) {
+  const { theme, current } = useTheme();
   const toggle = async (t) => {
     await patch(`/tasks/${t.id}`, { completed: !t.completed });
     refresh();
@@ -87,11 +89,11 @@ export default function Today({ boot, refresh, today, onAdd }) {
                 onClick={() => toggleHabit(h)}
                 className={`flex items-center gap-2 rounded-full border px-4 py-2 text-sm font-semibold transition-all active:scale-95 ${
                   h.done
-                    ? "border-transparent bg-[#A8C8A0] text-white shadow-sm"
+                    ? "border-transparent bg-[var(--pop2)] text-[var(--ink)] shadow-sm"
                     : "border-border/70 bg-background text-foreground/75 hover:border-primary/50"
                 }`}
               >
-                <span>{h.emoji}</span> {h.name} {h.done ? "✓" : "○"}
+                <span>{h.emoji}</span> {h.name} {h.done ? current.check : theme === "galaxy" ? "🌙" : "○"}
               </button>
             ))}
           </div>

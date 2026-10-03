@@ -100,7 +100,7 @@ export default function MoneyView({ boot, refresh, today }) {
             )}
             <button type="button" onClick={() => setDate(addDays(date, 1))} className="grid h-8 w-8 place-items-center rounded-full border border-border/70 bg-card text-muted-foreground hover:bg-muted">›</button>
           </div>
-          {saved && <span className="text-xs font-bold text-[#6E9668]">saved ♡</span>}
+          {saved && <span className="text-xs font-bold text-[var(--ink)]">saved ♡</span>}
         </div>
 
         <div className="flex flex-wrap items-center gap-5 rounded-2xl bg-gradient-to-r from-[#F7EFC4]/50 to-[#FDEBD3]/50 p-5 dark:from-[#3A3428] dark:to-[#3D3222]">
@@ -151,7 +151,7 @@ export default function MoneyView({ boot, refresh, today }) {
                 total spent: <b className="text-foreground">₹{st.total}</b>
               </span>
             </div>
-            <Bar value={st.tracked} max={st.elapsed || 1} h="h-2.5" from="#E7C86D" to="#F2B5C6" />
+            <Bar value={st.tracked} max={st.elapsed || 1} h="h-2.5" from="var(--pop2)" to="var(--pop)" />
           </div>
         )}
 
@@ -167,7 +167,7 @@ export default function MoneyView({ boot, refresh, today }) {
             const future = d > today;
             const isToday = d === today;
             let cls = "cursor-default bg-muted/50 text-muted-foreground/40";
-            if (done) cls = "bg-[#E7C86D] text-white hover:opacity-80";
+            if (done) cls = "border-[2px] border-[var(--ink)] bg-[var(--pop2)] text-[var(--ink)] hover:opacity-80";
             else if (isToday) cls = "bg-primary/15 text-primary ring-2 ring-primary/40";
             else if (!future) cls = "bg-rose-100/80 text-rose-400 hover:scale-105 dark:bg-[#3A2F3F] dark:text-rose-300/60";
             return (

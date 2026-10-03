@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { SectionCard, CuteCheck, PageHead, MonthNav } from "@/components/ui-bits";
 import { post, patch, del, fmtDay, pad2 } from "@/lib/shared";
+import { useTheme } from "@/components/theme";
 
 const shiftMonth = (m, n) => {
   const [y, mm] = m.split("-").map(Number);
@@ -11,6 +12,7 @@ const shiftMonth = (m, n) => {
 };
 
 export default function CalendarView({ boot, refresh, today }) {
+  const { theme, current } = useTheme();
   const [month, setMonth] = useState(today.slice(0, 7));
   const [selected, setSelected] = useState(today);
   const [day, setDay] = useState(null);
@@ -142,9 +144,9 @@ export default function CalendarView({ boot, refresh, today }) {
                             await post("/habits/toggle", { habitId: h.id, date: day.date });
                             refresh();
                           }}
-                          className={`rounded-full border px-3 py-1.5 text-xs font-semibold transition-all active:scale-95 ${h.done ? "border-transparent bg-[#A8C8A0] text-white" : "border-border/70 bg-background text-foreground/70"}`}
+                          className={`rounded-full border px-3 py-1.5 text-xs font-semibold transition-all active:scale-95 ${h.done ? "border-transparent bg-[var(--pop2)] text-[var(--ink)]" : "border-border/70 bg-background text-foreground/70"}`}
                         >
-                          {h.emoji} {h.name} {h.done ? "✓" : "○"}
+                          {h.emoji} {h.name} {h.done ? current.check : theme === "galaxy" ? "🌙" : "○"}
                         </button>
                       ))}
                     </div>
@@ -182,7 +184,7 @@ export default function CalendarView({ boot, refresh, today }) {
                     <p className="mb-2 text-xs font-bold uppercase tracking-wide text-muted-foreground">🌸 Weekly goals done</p>
                     <div className="flex flex-wrap gap-1.5">
                       {day.weeklyGoals.map((g) => (
-                        <span key={g.id} className="rounded-full bg-[#A8C8A0]/20 px-3 py-1 text-xs font-semibold text-[#6E9668]">
+                        <span key={g.id} className="rounded-full bg-[color-mix(in_srgb,var(--pop2)_70%,transparent)] px-3 py-1 text-xs font-semibold text-[var(--ink)]">
                           {g.emoji} {g.name}
                         </span>
                       ))}

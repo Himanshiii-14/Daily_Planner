@@ -140,7 +140,7 @@ export default function YearlyView({ boot, refresh, today, onAdd }) {
                         {g.milestones.map((m) => (
                           <div key={m.id} className="flex items-center gap-2 rounded-lg px-1.5 py-1 text-xs hover:bg-muted/60">
                             <button type="button" onClick={() => toggleMilestone(g, m)} className="flex min-w-0 flex-1 items-center gap-2 text-left">
-                              <span className={`grid h-4 w-4 place-items-center rounded-full text-[9px] ${m.done ? "bg-[#A8C8A0] text-white" : "border border-border bg-card"}`}>{m.done ? "✓" : ""}</span>
+                              <span className={`grid h-4 w-4 place-items-center rounded-full text-[9px] ${m.done ? "bg-[var(--pop2)] text-[var(--ink)]" : "border border-border bg-card"}`}>{m.done ? "✓" : ""}</span>
                               <span className={m.done ? "line-through opacity-60" : ""}>{m.title}</span>
                             </button>
                             <button type="button" onClick={() => removeMilestone(g, m)} className="text-muted-foreground hover:text-destructive">✕</button>

@@ -129,7 +129,7 @@ export default function Monthly({ boot, refresh, today, onAdd }) {
                       let cls = "text-muted-foreground/30";
                       if (cell?.completed) {
                         content = "✓";
-                        cls = "bg-[#A8C8A0] text-white";
+                        cls = "bg-[var(--pop2)] text-[var(--ink)]";
                       } else if (cell && monthEnd < today) {
                         content = "✕";
                         cls = "bg-rose-100 text-rose-400 dark:bg-[#3A2F3F] dark:text-rose-300/70";
