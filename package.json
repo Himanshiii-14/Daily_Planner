@@ -1,0 +1,24 @@
+{
+  "name": "my-little-life",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "node scripts/with-node.js dev --port 3000",
+    "build": "node scripts/with-node.js build",
+    "start": "node scripts/with-node.js start --port 3000"
+  },
+  "dependencies": {
+    "@radix-ui/react-dialog": "1.1.14",
+    "mongodb": "6.6.0",
+    "next": "15.5.18",
+    "react": "18.3.1",
+    "react-dom": "18.3.1"
+  },
+  "devDependencies": {
+    "autoprefixer": "10.4.19",
+    "node": "^22.20.0",
+    "postcss": "8.5.10",
+    "tailwindcss": "3.4.1",
+    "tailwindcss-animate": "1.0.7"
+  }
+}
