@@ -68,24 +68,24 @@ npm start
 
 ## First visit
 
-The app creates a settings document the first time it talks to MongoDB.
+Open the app and **Sign up** with your name, email, and a password (at least 8 characters). Each account has its own tasks, habits, goals, food, money, and notes.
 
-- **Default PIN:** `1234`
-- **Default name:** Himanshi (change it in Settings)
+The first account created keeps any planner data that was already in the database. Later accounts start empty.
 
-The PIN is stored as a hash. The unlock cookie is `httpOnly` and lasts one year.
+Passwords are stored as a salted hash. The sign-in cookie is `httpOnly` and lasts 30 days. Sign out from Settings.
 
 ## Sample data
 
 Settings → **Add sample data** fills habits, tasks, goals, food, money, and notes only when those collections are empty.
 
-**Reset planner data** deletes those entries and keeps your name and PIN.
+**Reset planner data** deletes that account's entries and keeps the login.
 
 ## What is stored
 
 | Collection | Contents |
 | --- | --- |
-| `settings` | Name, PIN hash, session token |
+| `users` | Name, email, password hash |
+| `sessions` | Sign-in cookies |
 | `tasks` | Daily tasks |
 | `habits` / `habitCompletions` | Habits and the days you completed them |
 | `weeklyGoals` / `weeklyCompletions` | Weekly targets and occurrences |

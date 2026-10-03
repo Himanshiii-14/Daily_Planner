@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { MongoClient } from "mongodb";
 import crypto from "crypto";
+import { AsyncLocalStorage } from "async_hooks";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
@@ -9,6 +10,20 @@ const MONGO_URL = process.env.MONGO_URL || "mongodb://127.0.0.1:27017";
 const DB_NAME = process.env.DB_NAME || "mylittlelife";
 
 const g = globalThis;
+const sessionStore = new AsyncLocalStorage();
+
+const PLANNER = new Set([
+  "tasks",
+  "habits",
+  "habitCompletions",
+  "weeklyGoals",
+  "weeklyCompletions",
+  "monthlyGoals",
+  "yearlyGoals",
+  "foodEntries",
+  "moneyEntries",
+  "dailyNotes",
+]);
 
 function clean(value) {
   if (Array.isArray(value)) return value.map(clean);
@@ -53,12 +68,39 @@ async function db() {
   }
 }
 
-async function coll(name) {
+async function raw(name) {
   return (await db()).collection(name);
 }
 
+function me() {
+  const user = sessionStore.getStore()?.user;
+  if (!user) throw new Error("Not signed in");
+  return user;
+}
+
+function scoped(collection) {
+  const own = (filter = {}) => ({ ...filter, userId: me().id });
+  const stamp = (doc) => ({ ...doc, userId: me().id });
+  return {
+    find: (filter, opts) => collection.find(own(filter), opts),
+    findOne: (filter, opts) => collection.findOne(own(filter), opts),
+    insertOne: (doc, opts) => collection.insertOne(stamp(doc), opts),
+    insertMany: (docs, opts) => collection.insertMany(docs.map(stamp), opts),
+    updateOne: (filter, update, opts) => collection.updateOne(own(filter), update, opts),
+    updateMany: (filter, update, opts) => collection.updateMany(own(filter), update, opts),
+    deleteOne: (filter, opts) => collection.deleteOne(own(filter), opts),
+    deleteMany: (filter, opts) => collection.deleteMany(own(filter), opts),
+    countDocuments: (filter = {}, opts) => collection.countDocuments(own(filter), opts),
+    findOneAndUpdate: (filter, update, opts) => collection.findOneAndUpdate(own(filter), update, opts),
+  };
+}
+
+async function coll(name) {
+  const collection = await raw(name);
+  return PLANNER.has(name) ? scoped(collection) : collection;
+}
+
 const uuid = () => crypto.randomUUID();
-const sha = (s) => crypto.createHash("sha256").update(String(s)).digest("hex");
 const pad2 = (n) => String(n).padStart(2, "0");
 const now = () => new Date().toISOString();
 const SERVER_TODAY = () => new Date().toISOString().slice(0, 10);
@@ -131,21 +173,97 @@ function escapeRegex(term) {
   return term.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 }
 
-async function getSettings() {
-  const c = await coll("settings");
-  let s = await c.findOne({ key: "app" });
-  if (!s) {
-    s = { key: "app", name: "Himanshi", pinHash: sha("1234"), token: uuid(), createdAt: now() };
-    await c.insertOne(s);
-  }
-  return s;
+function normEmail(value) {
+  return String(value || "").trim().toLowerCase();
 }
 
-async function isAuthed(req) {
-  const s = await getSettings();
-  if (!s.pinHash) return true;
-  const m = (req.headers.get("cookie") || "").match(/life_token=([^;]+)/);
-  return !!(m && m[1] === s.token);
+function validEmail(email) {
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) && email.length <= 120;
+}
+
+function validPassword(password) {
+  return typeof password === "string" && password.length >= 8 && password.length <= 128;
+}
+
+function validName(value) {
+  const name = String(value || "").trim();
+  if (name.length < 1 || name.length > 40) return "";
+  return name;
+}
+
+function hashPassword(password) {
+  const salt = crypto.randomBytes(16).toString("hex");
+  const hash = crypto.scryptSync(password, salt, 32).toString("hex");
+  return `${salt}:${hash}`;
+}
+
+function verifyPassword(password, stored) {
+  const [salt, hash] = String(stored || "").split(":");
+  if (!salt || !hash || !validPassword(password)) return false;
+  const actual = Buffer.from(hash, "hex");
+  const check = crypto.scryptSync(password, salt, 32);
+  if (actual.length !== check.length) return false;
+  return crypto.timingSafeEqual(actual, check);
+}
+
+function cookieToken(req) {
+  const match = (req.headers.get("cookie") || "").match(/(?:^|; )life_token=([^;]+)/);
+  return match ? decodeURIComponent(match[1]) : "";
+}
+
+function sessionCookie(res, req, token) {
+  const proto = req.headers.get("x-forwarded-proto") || new URL(req.url).protocol.replace(":", "");
+  res.cookies.set("life_token", token, {
+    httpOnly: true,
+    sameSite: "lax",
+    secure: proto === "https",
+    path: "/",
+    maxAge: token ? 60 * 60 * 24 * 30 : 0,
+  });
+}
+
+async function ensureAuthIndexes() {
+  if (g._mllAuthIndexes) return;
+  const users = await raw("users");
+  const sessions = await raw("sessions");
+  await users.createIndex({ email: 1 }, { unique: true });
+  await sessions.createIndex({ token: 1 }, { unique: true });
+  g._mllAuthIndexes = true;
+}
+
+async function userFromRequest(req) {
+  const token = cookieToken(req);
+  if (!token) return null;
+  const session = await (await raw("sessions")).findOne({ token });
+  if (!session) return null;
+  if (session.expiresAt && session.expiresAt < now()) {
+    await (await raw("sessions")).deleteOne({ token });
+    return null;
+  }
+  const user = await (await raw("users")).findOne({ id: session.userId });
+  if (!user) return null;
+  return { id: user.id, name: user.name, email: user.email };
+}
+
+async function authed(req, fn) {
+  const user = await userFromRequest(req);
+  if (!user) return locked();
+  return sessionStore.run({ user }, fn);
+}
+
+async function openSession(req, user) {
+  const token = uuid();
+  const expires = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString();
+  await (await raw("sessions")).insertOne({ token, userId: user.id, createdAt: now(), expiresAt: expires });
+  const res = json({ ok: true, name: user.name, email: user.email });
+  sessionCookie(res, req, token);
+  return res;
+}
+
+async function claimLegacy(userId) {
+  for (const name of PLANNER) {
+    await (await raw(name)).updateMany({ userId: { $exists: false } }, { $set: { userId } });
+  }
 }
 
 const MONGO_HINT = "Cannot reach MongoDB. Start it (or run `docker compose up -d`) and check MONGO_URL in .env.";
@@ -164,7 +282,7 @@ async function getBootstrap(q) {
   const today = safeDate(q.get("today"), SERVER_TODAY());
   const month = today.slice(0, 7);
   const ws = weekStart(today);
-  const s = await getSettings();
+  const user = me();
   const [tasks, habits, weeklyGoals, wc, todayComps, monthlyGoals, yearlyGoals, food, money, note] = await Promise.all([
     coll("tasks").then((c) => c.find({ date: today }).sort({ createdAt: 1 }).toArray()),
     coll("habits").then((c) => c.find({}).sort({ createdAt: 1 }).toArray()),
@@ -185,7 +303,8 @@ async function getBootstrap(q) {
   const taskDone = tasks.filter((t) => t.completed).length;
   const habitDone = habits.filter((h) => doneHabit.has(h.id)).length;
   return json({
-    name: s.name,
+    name: user.name,
+    email: user.email,
     today,
     month,
     weekStart: ws,
@@ -561,11 +680,9 @@ async function upsertNote(b) {
 }
 
 async function updateSettings(b) {
-  const set = {};
-  if (b.name !== undefined) set.name = (b.name || "").trim() || "Friend";
-  if (Object.keys(set).length) await coll("settings").then((c) => c.updateOne({ key: "app" }, { $set: set }));
-  const s = await getSettings();
-  return json({ name: s.name });
+  const name = validName(b.name) || "Friend";
+  await (await raw("users")).updateOne({ id: me().id }, { $set: { name } });
+  return json({ name, email: me().email });
 }
 
 async function addMilestone(b) {
@@ -581,27 +698,54 @@ async function addMilestone(b) {
   return json(doc);
 }
 
-async function authUnlock(req, b) {
-  const s = await getSettings();
-  if (s.pinHash !== sha(b.pin || "")) return json({ error: "Wrong PIN" }, 401);
-  const res = json({ ok: true, name: s.name });
-  const proto = req.headers.get("x-forwarded-proto") || new URL(req.url).protocol.replace(":", "");
-  res.cookies.set("life_token", s.token, {
-    httpOnly: true,
-    sameSite: "lax",
-    secure: proto === "https",
-    path: "/",
-    maxAge: 31536000,
-  });
+async function authSignup(req, b) {
+  await ensureAuthIndexes();
+  const name = validName(b.name);
+  const email = normEmail(b.email);
+  const password = b.password;
+  if (!name) return json({ error: "Name is required" }, 400);
+  if (!validEmail(email)) return json({ error: "Enter a valid email" }, 400);
+  if (!validPassword(password)) return json({ error: "Password must be at least 8 characters" }, 400);
+  const users = await raw("users");
+  const first = (await users.countDocuments()) === 0;
+  const user = { id: uuid(), name, email, passwordHash: hashPassword(password), createdAt: now() };
+  try {
+    await users.insertOne(user);
+  } catch (e) {
+    if (e?.code === 11000) return json({ error: "An account with that email already exists" }, 409);
+    throw e;
+  }
+  if (first) await claimLegacy(user.id);
+  return openSession(req, user);
+}
+
+async function authSignin(req, b) {
+  await ensureAuthIndexes();
+  const email = normEmail(b.email);
+  const password = b.password;
+  const user = validEmail(email) ? await (await raw("users")).findOne({ email }) : null;
+  if (!user || !verifyPassword(password, user.passwordHash)) {
+    return json({ error: "Email or password is wrong" }, 401);
+  }
+  return openSession(req, user);
+}
+
+async function authSignout(req) {
+  const token = cookieToken(req);
+  if (token) await (await raw("sessions")).deleteOne({ token });
+  const res = json({ ok: true });
+  sessionCookie(res, req, "");
   return res;
 }
 
-async function authChangePin(b) {
-  const s = await getSettings();
-  if (s.pinHash !== sha(b.currentPin || "")) return json({ error: "Current PIN is wrong" }, 400);
-  const np = String(b.newPin || "");
-  if (!/^\d{4}$/.test(np)) return json({ error: "New PIN must be 4 digits" }, 400);
-  await coll("settings").then((c) => c.updateOne({ key: "app" }, { $set: { pinHash: sha(np) } }));
+async function authChangePassword(b) {
+  if (!validPassword(b.newPassword)) return json({ error: "New password must be at least 8 characters" }, 400);
+  const users = await raw("users");
+  const user = await users.findOne({ id: me().id });
+  if (!user || !verifyPassword(b.currentPassword || "", user.passwordHash)) {
+    return json({ error: "Current password is wrong" }, 400);
+  }
+  await users.updateOne({ id: user.id }, { $set: { passwordHash: hashPassword(b.newPassword) } });
   return json({ ok: true });
 }
 
@@ -749,7 +893,7 @@ export async function GET(request, { params }) {
   const { path = [] } = await params;
   const q = new URL(request.url).searchParams;
   try {
-    if (path[0] !== "auth" && !(await isAuthed(request))) return locked();
+    return await authed(request, async () => {
     if (!path.length || path[0] === "bootstrap") return await getBootstrap(q);
     switch (path[0]) {
       case "day":
@@ -783,13 +927,12 @@ export async function GET(request, { params }) {
         return await getNotes(q);
       case "search":
         return await searchAll(q);
-      case "settings": {
-        const s = await getSettings();
-        return json({ name: s.name, hasPin: !!s.pinHash });
-      }
+      case "settings":
+        return json({ name: me().name, email: me().email });
       default:
         return notFound();
     }
+    });
   } catch (e) {
     return fail(e);
   }
@@ -799,12 +942,15 @@ export async function POST(request, { params }) {
   const { path = [] } = await params;
   const body = await request.json().catch(() => ({}));
   try {
-    if (path[0] !== "auth" && !(await isAuthed(request))) return locked();
+    if (path[0] === "auth") {
+      if (path[1] === "signup") return await authSignup(request, body);
+      if (path[1] === "signin") return await authSignin(request, body);
+      if (path[1] === "signout") return await authSignout(request);
+      if (path[1] === "password") return await authed(request, () => authChangePassword(body));
+      return notFound();
+    }
+    return await authed(request, async () => {
     switch (path[0]) {
-      case "auth":
-        if (path[1] === "unlock") return await authUnlock(request, body);
-        if (path[1] === "change-pin") return await authChangePin(body);
-        return notFound();
       case "tasks":
         return await createTask(body);
       case "habits":
@@ -831,6 +977,7 @@ export async function POST(request, { params }) {
       default:
         return notFound();
     }
+    });
   } catch (e) {
     return fail(e);
   }
@@ -840,7 +987,7 @@ export async function PATCH(request, { params }) {
   const { path = [] } = await params;
   const body = await request.json().catch(() => ({}));
   try {
-    if (!(await isAuthed(request))) return locked();
+    return await authed(request, async () => {
     if (path[0] === "tasks" && path[1]) {
       const set = pickFields(body, ["title", "category", "priority", "notes", "time", "date"]);
       if (body.completed !== undefined) {
@@ -899,6 +1046,7 @@ export async function PATCH(request, { params }) {
       return json(doc);
     }
     return notFound();
+    });
   } catch (e) {
     return fail(e);
   }
@@ -908,7 +1056,7 @@ export async function DELETE(request, { params }) {
   const { path = [] } = await params;
   const q = new URL(request.url).searchParams;
   try {
-    if (!(await isAuthed(request))) return locked();
+    return await authed(request, async () => {
     if (path[0] === "seed") {
       const names = ["tasks", "habits", "habitCompletions", "weeklyGoals", "weeklyCompletions", "monthlyGoals", "yearlyGoals", "foodEntries", "moneyEntries", "dailyNotes"];
       for (const name of names) {
@@ -959,6 +1107,7 @@ export async function DELETE(request, { params }) {
       return json({ ok: true });
     }
     return notFound();
+    });
   } catch (e) {
     return fail(e);
   }

@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import PinGate from "@/components/PinGate";
+import AuthGate from "@/components/AuthGate";
 import AddModal from "@/components/AddModal";
 import Dashboard from "@/components/views/Dashboard";
 import Today from "@/components/views/Today";
@@ -113,7 +113,7 @@ export default function App() {
     setResults(null);
   };
 
-  if (locked) return <PinGate onUnlock={load} />;
+  if (locked) return <AuthGate onUnlock={load} />;
   if (error) {
     return (
       <div className="grid min-h-screen place-items-center bg-background px-6 text-center">
@@ -178,6 +178,7 @@ export default function App() {
         </nav>
         <div className="border-t border-border/50 px-4 py-3">
           <div className="mb-2 text-sm font-semibold text-muted-foreground">♡ {boot.name}</div>
+          {boot.email && <div className="mb-2 truncate text-[11px] text-muted-foreground">{boot.email}</div>}
           <ThemeSwitcher compact />
         </div>
       </aside>

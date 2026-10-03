@@ -9,8 +9,8 @@ export default function SettingsView({ boot, refresh }) {
   const [msg, setMsg] = useState("");
   const [cur, setCur] = useState("");
   const [np, setNp] = useState("");
-  const [pinMsg, setPinMsg] = useState("");
-  const [pinBad, setPinBad] = useState(false);
+  const [pwMsg, setPwMsg] = useState("");
+  const [pwBad, setPwBad] = useState(false);
 
   const saveName = async () => {
     await fetch("/api/settings", {
@@ -24,24 +24,29 @@ export default function SettingsView({ boot, refresh }) {
     refresh();
   };
 
-  const changePin = async () => {
-    const r = await fetch("/api/auth/change-pin", {
+  const changePassword = async () => {
+    const r = await fetch("/api/auth/password", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       credentials: "same-origin",
-      body: JSON.stringify({ currentPin: cur, newPin: np }),
+      body: JSON.stringify({ currentPassword: cur, newPassword: np }),
     });
     const d = await r.json().catch(() => ({}));
     if (r.ok) {
-      setPinBad(false);
-      setPinMsg("PIN changed ♡");
+      setPwBad(false);
+      setPwMsg("password changed ♡");
       setCur("");
       setNp("");
     } else {
-      setPinBad(true);
-      setPinMsg(d.error || "could not change PIN");
+      setPwBad(true);
+      setPwMsg(d.error || "could not change password");
     }
-    setTimeout(() => setPinMsg(""), 2500);
+    setTimeout(() => setPwMsg(""), 2500);
+  };
+
+  const signOut = async () => {
+    await fetch("/api/auth/signout", { method: "POST", credentials: "same-origin" });
+    refresh();
   };
 
   const seed = async () => {
@@ -57,7 +62,7 @@ export default function SettingsView({ boot, refresh }) {
   };
 
   const wipe = async () => {
-    if (!confirm("Reset your planner data? Tasks, habits, goals, food, money, and notes will be deleted. Your name and PIN stay.")) return;
+    if (!confirm("Reset your planner data? Tasks, habits, goals, food, money, and notes will be deleted. Your account stays.")) return;
     await fetch("/api/seed", { method: "DELETE", credentials: "same-origin" });
     refresh();
   };
@@ -73,7 +78,8 @@ export default function SettingsView({ boot, refresh }) {
         <div className="flex flex-wrap items-end gap-3">
           <div className="min-w-48 flex-1">
             <label className={label}>greeting name</label>
-            <input className={input} value={name} onChange={(e) => setName(e.target.value)} placeholder="Himanshi" />
+            <input className={input} value={name} onChange={(e) => setName(e.target.value)} placeholder="Your name" />
+            {boot.email && <p className="mt-2 text-xs text-muted-foreground">{boot.email}</p>}
           </div>
           <Btn onClick={saveName}>Save</Btn>
           {msg && <span className="pb-2 text-xs font-bold text-[var(--ink)]">{msg}</span>}
@@ -84,20 +90,23 @@ export default function SettingsView({ boot, refresh }) {
         <ThemeSwitcher />
       </SectionCard>
 
-      <SectionCard emoji="🔒" title="Privacy PIN">
+      <SectionCard emoji="🔒" title="Password">
         <div className="grid gap-3 sm:grid-cols-2">
           <div>
-            <label className={label}>current PIN</label>
-            <input type="password" inputMode="numeric" maxLength={4} className={input} value={cur} onChange={(e) => setCur(e.target.value.replace(/\D/g, "").slice(0, 4))} />
+            <label className={label}>current password</label>
+            <input type="password" autoComplete="current-password" className={input} value={cur} onChange={(e) => setCur(e.target.value)} />
           </div>
           <div>
-            <label className={label}>new 4-digit PIN</label>
-            <input type="password" inputMode="numeric" maxLength={4} className={input} value={np} onChange={(e) => setNp(e.target.value.replace(/\D/g, "").slice(0, 4))} />
+            <label className={label}>new password</label>
+            <input type="password" autoComplete="new-password" className={input} value={np} onChange={(e) => setNp(e.target.value)} />
           </div>
         </div>
-        <div className="mt-3 flex items-center gap-3">
-          <Btn onClick={changePin} disabled={cur.length !== 4 || np.length !== 4}>Change PIN</Btn>
-          {pinMsg && <span className={`text-xs font-bold ${pinBad ? "text-destructive" : "text-[var(--ink)]"}`}>{pinMsg}</span>}
+        <div className="mt-3 flex flex-wrap items-center gap-3">
+          <Btn onClick={changePassword} disabled={cur.length < 8 || np.length < 8}>Change password</Btn>
+          <button type="button" onClick={signOut} className="rounded-full border border-border px-4 py-2 text-sm font-bold text-foreground transition hover:bg-muted">
+            Sign out
+          </button>
+          {pwMsg && <span className={`text-xs font-bold ${pwBad ? "text-destructive" : "text-[var(--ink)]"}`}>{pwMsg}</span>}
         </div>
       </SectionCard>
 
@@ -109,7 +118,7 @@ export default function SettingsView({ boot, refresh }) {
           </button>
         </div>
         <p className="mt-2 text-xs text-muted-foreground">
-          Sample data only fills collections that are still empty, so you can explore every view. Reset clears planner entries and keeps your name and PIN.
+          Sample data only fills your empty lists. Reset clears your planner and keeps your account. Other people keep their own data.
         </p>
       </SectionCard>
     </div>
